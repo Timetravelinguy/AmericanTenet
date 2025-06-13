@@ -1,36 +1,36 @@
-from pymavlink import mavutil
-from filter_message import route_message
-
-
-def det_flight_phase(telemetry_data):
-    """
-    Determine the flight phase based on telemetry data.
+def det_flight_phase(sub_mode_str, prev_phase):
+    # TAKEOFF
+    if sub_mode_str == "TAKEOFF":
+        return "TAKEOFF"
     
-    Args:
-        telemetry_data (dict): Dictionary containing telemetry data such as altitude, vertical speed, armed state, etc.
+    # PREFLIGHT
+    elif sub_mode_str == "LOITER" and prev_phase is None:
+        return "PREFLIGHT"
     
-    Returns:
-        str: The current flight phase.
-    """
-    altitude = telemetry_data.get('altitude', 0)
-    vertical_speed = telemetry_data.get('vertical_speed', 0)
-    armed = telemetry_data.get('armed', False)
-    ground_speed = telemetry_data.get('ground_speed', 0)
-
-    if not armed:
-        if altitude < 1 and ground_speed < 1:
-            return "preflight"
-        else:
-            return "post_flight"
-
-    if vertical_speed > 2:
-        return "takeoff"
-    elif vertical_speed < -2:
-        return "landing"
-    elif ground_speed > 5 and abs(vertical_speed) < 2:
-        return "cruise"
-    elif ground_speed < 1 and abs(vertical_speed) < 1:
-        return "hovering"
-    else:
-        return "unknown"
+    # HOVERING
+    elif sub_mode_str == "LOITER" and prev_phase in ["TAKEOFF", "CRUISING"]:
+        return "HOVERING"
     
+    # CRUISING
+    elif sub_mode_str == "MISSION" and prev_phase in ["HOVERING", "SOARING IN THERMAL"]:
+        return "CRUISING"
+    
+    # SOARING IN THERMAL
+    elif sub_mode_str == "LOITER" and prev_phase == "CRUISING":
+        return "SOARING IN THERMAL"
+    
+    # LANDING
+    elif sub_mode_str == "LAND":
+        return "LANDING"
+    
+    # POST FLIGHT
+    elif sub_mode_str == "LOITER" and prev_phase == "LANDING":
+        return "POST FLIGHT"
+    
+    # Fallback: Handle undefined or stuck phases
+    if prev_phase == "PREFLIGHT" and sub_mode_str not in ["TAKEOFF", "MISSION", "LAND"]:
+        print("Warning: Stuck in PREFLIGHT phase. Check PX4 mode transitions.")
+        return "TAKEOFF"  # Default to TAKEOFF for testing
+    
+    # UNKNOWN FLIGHT PHASE
+    return prev_phase
