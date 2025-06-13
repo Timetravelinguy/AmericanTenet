@@ -7,18 +7,18 @@ from pymavlink import mavutil
 
 def wakeup():
     # Create mavserial
-    the_connection = mavutil.mavlink_connection('udpin:0.0.0.0:14445')# /dev/ttyACMX for linux
-
+    the_connection = mavutil.mavlink_connection('udpin:0.0.0.0:14550')  # /dev/ttyACMX for linux
+    
     # Sending a message creates PX4's streamer to serial.
     the_connection.mav.heartbeat_send(
-        0, #type
-        0, #autopilot
-        0, #base_mode
-        0, #custom_mode
-        0, #system_status
-        0, #mavlink_version
+        0,  # type
+        0,  # autopilot
+        0,  # base_mode
+        0,  # custom_mode
+        0,  # system_status
+        0,  # mavlink_version
     )
-
+    
     # Check the heartbeat
     the_connection.wait_heartbeat()
     print(f"Heartbeat from target_system: {the_connection.target_system}, MAV_TYPE: {the_connection.mav_type}")

@@ -9,7 +9,7 @@ from wakeup import wakeup
 wakeup()
 
 # Create mavserial
-the_connection = mavutil.mavlink_connection('udpin:0.0.0.0:14445')# /dev/ttyACM0 for linux
+the_connection = mavutil.mavlink_connection('udp:localhost:14550')# /dev/ttyACM0 for linux
 
 # Keep reading the mavlink messages. i.e attitude and scaled imu
 while True:
