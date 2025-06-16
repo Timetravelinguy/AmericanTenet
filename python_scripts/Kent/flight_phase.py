@@ -4,7 +4,7 @@ def det_flight_phase(sub_mode_str, prev_phase):
         return "TAKEOFF"
     
     # PREFLIGHT
-    elif sub_mode_str == "LOITER" and prev_phase is None:
+    elif prev_phase == "PREFLIGHT" or prev_phase is None:
         return "PREFLIGHT"
     
     # HOVERING
@@ -27,10 +27,5 @@ def det_flight_phase(sub_mode_str, prev_phase):
     elif sub_mode_str == "LOITER" and prev_phase == "LANDING":
         return "POST FLIGHT"
     
-    # Fallback: Handle undefined or stuck phases
-    if prev_phase == "PREFLIGHT" and sub_mode_str not in ["TAKEOFF", "MISSION", "LAND"]:
-        print("Warning: Stuck in PREFLIGHT phase. Check PX4 mode transitions.")
-        return "TAKEOFF"  # Default to TAKEOFF for testing
-    
-    # UNKNOWN FLIGHT PHASE
+    # Fallback
     return prev_phase
