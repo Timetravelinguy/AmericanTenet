@@ -1,8 +1,9 @@
 from pymavlink import mavutil
 from mavlink_connect import connect
-from px4_mode_decode import decode_px4_mode
-from flight_phase import det_flight_phase
-from datetime import datetime
+#from px4_mode_decode import decode_px4_mode
+#from flight_phase import det_flight_phase
+from heartbeat import process_heartbeat
+from telemetry import update_telemetry, output_telemetry
 import time
 
 #test
@@ -31,7 +32,7 @@ def main():
         "SYS_STATUS": ["voltage", "battery", "onboard_control_sensors_present", "onboard_control_sensors_enabled", "onboard_control_sensors_health"],
         "VFR_HUD": ["airspeed", "climb", "alt"]
     }
-
+    
     # Define which message types are relevant to each flight phase
     types_by_phase = {
         "MASTER LOG": ["BATTERY_STATUS", "GPS_RAW_INT", "ESC_STATUS", "ESC_INFO", "SYS_STATUS", "RADIO_STATUS", "VFR_HUD", "SCALED_IMU2", "SCALED_IMU3"],
@@ -43,65 +44,45 @@ def main():
         "LANDING": ["ATTITUDE", "VFR_HUD", "SERVO_OUTPUT_RAW", "ESC_STATUS", "GLOBAL_POSITION_INT"],
         "POST FLIGHT": ["BATTERY_STATUS", "GPS_RAW_INT", "ESC_STATUS", "ESC_INFO", "SYS_STATUS", "RADIO_STATUS", "VFR_HUD", "SCALED_IMU2", "SCALED_IMU3", "STATUSTEXT"]
     }
-
-    # Initialize telemetry storage structure
+    
+    # For real-time telemetry storage
     flight_phase_data = {phase: {} for phase in types_by_phase}
 
-    current_phase = "PREFLIGHT"
-    previous_phase = "PREFLIGHT"
-    last_heartbeat_time = 0
-    last_print_time = 0
+    # Keep track of phases and times
+    curr_phase = "PREFLIGHT"
+    prev_phase = "PREFLIGHT"
+    last_heartbeat_time = 0.0
+    last_print_time = 0.0
 
     # Main MAVLink message processing loop
     while True:
+        # Receive messages of all types
         msg = the_connection.recv_match(blocking=False)
 
+        # Skip "bad" messages
         if msg is None:
             time.sleep(0.01)  # Prevents busy-waiting
             continue
 
+        # Determine message type
         msg_type = msg.get_type()
 
         # Process HEARTBEAT messages
         if msg_type == 'HEARTBEAT':
-            print(f"[DEBUG] HEARTBEAT received: {msg}")
-            now = time.time()
-
-            # Limit HEARTBEAT decoding to once per second
-            if now - last_heartbeat_time >= 1:
-                last_heartbeat_time = now
-
-                if hasattr(msg, "custom_mode"):
-                    main_mode_str, sub_mode_str = decode_px4_mode(msg.custom_mode)
-                    print(f"PX4 Flight Mode: {main_mode_str} - {sub_mode_str}")
-
-                    if main_mode_str != "Unknown (0)":
-                        current_phase = det_flight_phase(sub_mode_str, previous_phase)
-                        if current_phase != previous_phase:
-                            previous_phase = current_phase
+            # Based on flight mode from HEARTBEAT message, update current and previous flight phase
+            # Also return time heartbeat was processed at
+            curr_phase, prev_phase, last_heartbeat_time = process_heartbeat(msg, curr_phase, prev_phase, last_heartbeat_time)
 
         # Process all other telemetry messages
         elif msg_type in fields_by_type:
-            field_names = fields_by_type[msg_type]
-            msg_data = {}
+            # Depending on message type of MAVLink message, store only relevant fields
+            flight_phase_data[curr_phase][msg_type] = update_telemetry(msg, msg_type, fields_by_type)
 
-            for field in field_names:
-                if hasattr(msg, field):
-                    msg_data[field] = getattr(msg, field)
+        # Print current flight phase data every 1 second
+        last_print_time = output_telemetry(last_print_time, curr_phase, flight_phase_data)
 
-            current_time = datetime.now()
-            msg_data["timestamp"] = current_time.strftime("%H:%M:%S")
-            flight_phase_data[current_phase][msg_type] = msg_data
-
-        # Optional: print current flight phase data every 1 second
-        if time.time() - last_print_time >= 1:
-            last_print_time = time.time()
-            print(f"\n--- {current_phase} ---")
-            for mt, data in flight_phase_data[current_phase].items():
-                print(f"{current_phase} | {mt}: {data}")
-
+        # Run this loop every 1/100th of a second
         time.sleep(0.01)
-
 
 if __name__ == "__main__":
     try:
