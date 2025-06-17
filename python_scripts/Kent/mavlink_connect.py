@@ -11,6 +11,6 @@ def connect(protocol, port_number):
     print("Waiting for first heartbeat...")
     the_connection.wait_heartbeat()
     print("Heartbeat received!")
-    print("Connected to system %u component %u" % (the_connection.target_system, the_connection.target_component))
+    print(f"Connected to system {the_connection.target_system}, component {the_connection.target_component}")
     
     return the_connection

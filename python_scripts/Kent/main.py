@@ -1,16 +1,13 @@
-from pymavlink import mavutil
-from mavlink_connect import connect
-#from px4_mode_decode import decode_px4_mode
-#from flight_phase import det_flight_phase
-from heartbeat import process_heartbeat
 from telemetry import update_telemetry, output_telemetry
+from heartbeat import process_heartbeat
+from mavlink_connect import connect
+from pymavlink import mavutil
 import time
 
-#test
 def main():
     # Connect to MAVLink stream (forwarded by QGroundControl)
-    the_connection = connect('udpin', '14445')
-
+    the_connection = connect('udpin', '14551')
+    
     # Define which fields to extract from each MAVLink message type
     fields_by_type = {
         "ADSB_VEHICLE": ["icao_address", "lat", "lon", "altitude", "heading", "velocity"],
@@ -35,7 +32,7 @@ def main():
     
     # Define which message types are relevant to each flight phase
     types_by_phase = {
-        "MASTER LOG": ["BATTERY_STATUS", "GPS_RAW_INT", "ESC_STATUS", "ESC_INFO", "SYS_STATUS", "RADIO_STATUS", "VFR_HUD", "SCALED_IMU2", "SCALED_IMU3"],
+        "the_connection LOG": ["BATTERY_STATUS", "GPS_RAW_INT", "ESC_STATUS", "ESC_INFO", "SYS_STATUS", "RADIO_STATUS", "VFR_HUD", "SCALED_IMU2", "SCALED_IMU3"],
         "PREFLIGHT": ["ESC_STATUS", "HEARTBEAT", "RADIO_STATUS", "COMMAND_ACK", "SERVO_OUTPUT_RAW", "SYS_STATUS", "GPS_RAW_INT"],
         "TAKEOFF": ["ESC_INFO", "ESC_STATUS", "BATTERY_STATUS", "RAW_IMU", "SCALED_IMU2", "SCALED_IMU3", "GLOBAL_POSITION_INT"],
         "HOVERING": ["ESC_INFO", "ESC_STATUS", "SERVO_OUTPUT_RAW", "GPS_RAW_INT"],
@@ -51,6 +48,8 @@ def main():
     # Keep track of phases and times
     curr_phase = "PREFLIGHT"
     prev_phase = "PREFLIGHT"
+    
+    # To process 1hz for heartbeat messages
     last_heartbeat_time = 0.0
     last_print_time = 0.0
 
@@ -93,3 +92,51 @@ if __name__ == "__main__":
         print(f"\nMAVLink error: {e}")
     except Exception as e:
         print(f"\nUnexpected error: {e}")
+    
+'''
+The following commented code is to test sending MAVLink Commands from this program to the drone through the mavlink-router.
+
+    # Force arm
+    the_connection.mav.command_long_send(
+    the_connection.target_system,
+    the_connection.target_component,
+    mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+    0,         # confirmation
+    1,         # param1: 1 = arm, 0 = disarm
+    21196,     # param2: 21196 = force arm (PX4-specific magic number)
+    0, 0, 0, 0, 0
+    )
+
+    # Wait for command_ack
+    ack = the_connection.recv_match(type='COMMAND_ACK', blocking=True)
+    print(f"Arm ACK: {ack}")
+
+    # MAV_MODE_FLAG_CUSTOM_MODE_ENABLED = 1 << 7 = 128
+    PX4_CUSTOM_MODE_AUTO_MISSION = 4
+
+    the_connection.mav.set_mode_send(
+        the_connection.target_system,
+        mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+        PX4_CUSTOM_MODE_AUTO_MISSION
+    )
+
+
+    
+    # Send takeoff command
+    altitude = 30
+    the_connection.mav.command_long_send(
+        the_connection.target_system,
+        the_connection.target_component,
+        mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+        0,
+        0, 0, 0, 0,
+        0, 0,
+        altitude
+    )
+    ack = the_connection.recv_match(type='COMMAND_ACK', blocking=True)
+    print(f"Takeoff ACK: {ack}")
+
+main()
+
+'''
+    
