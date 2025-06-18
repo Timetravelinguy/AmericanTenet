@@ -12,16 +12,16 @@ FIELD_LABELS = {
     "lat": "Latitude (°)",
     "lon": "Longitude (°)",
     "altitude": "Altitude (m)",
-    "vx": "Vel X (cm/s)",
-    "vy": "Vel Y (cm/s)",
-    "vz": "Vel Z (cm/s)",
+    "vx": "Vel X (m/s)",
+    "vy": "Vel Y (m/s)",
+    "vz": "Vel Z (m/s)",
     "fix_type": "GPS Fix",
     "satellites_visible": "# Satellites",
-    "eph": "HDOP (cm)",
-    "voltage": "Voltage (mV)",
-    "voltages": "Voltages (mV)",
-    "current_battery": "Battery Current (cA)",
-    "energy_consumed": "Energy Used (mWh)",
+    "eph": "HDOP (m)",
+    "voltage": "Voltage (V)",
+    "voltages": "Voltages (V)",
+    "current_battery": "Battery Current (A)",
+    "energy_consumed": "Energy Used (Wh)",
     "rpm": "ESC RPM",
     "temperature": "Temp (°C)",
     "servo1_raw": "Servo 1",
@@ -48,7 +48,45 @@ def update_telemetry(message, type, existing_type):
     
     for field in field_names:
         if hasattr(message, field):
-            msg_data[field] = getattr(message, field)
+            value = getattr(message, field)
+            
+            # Conversions for specific fields
+            if field in ["lat", "lon"]:
+                # degE7 to °
+                value /= 1e7
+            elif field in ["altitude"]:
+                # mm to m
+                value /= 1000.0
+            elif field == "heading":
+                # cdeg to °
+                value *= 0.9
+            elif field in ["hor_velocity", "ver_velocity", "vx", "vy", "vz"]:
+                # cm/s to m/s
+                value /= 0.01
+            elif field == "temperature":
+                # cdegC to degC
+                value *= 0.01
+            elif field == "voltage_battery":
+                # mV to V
+                value /= 1000.0
+            elif field == "voltages":
+                # mV to V
+                value = [v / 1000.0 for v in value]
+            elif field == "current_battery":
+                # cA to A
+                value *= 0.01
+            elif field == "energy_consumed":
+                # hJ to J
+                value *= 100.0
+            elif field == "eph":
+                # cm to m
+                value *= 0.01
+            # May need to add RADIO_STATUS conversion depending on SI Unit desired
+            # May need to add SERVO_OUTPUT_RAW conversion (currently in us)
+            
+            msg_data[field] = value
+            
+            #msg_data[field] = getattr(message, field)
             
     # Add timestamp to the extracted data
     current_time = datetime.now()

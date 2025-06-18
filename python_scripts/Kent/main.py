@@ -1,4 +1,5 @@
 from telemetry import update_telemetry, output_telemetry
+from plotjuggler_bridge import send_to_plotjuggler
 from heartbeat import process_heartbeat
 from mavlink_connect import connect
 from pymavlink import mavutil
@@ -10,7 +11,7 @@ def main():
     
     # Define which fields to extract from each MAVLink message type
     fields_by_type = {
-        "ADSB_VEHICLE": ["icao_address", "lat", "lon", "altitude", "heading", "velocity"],
+        "ADSB_VEHICLE": ["icao_address", "lat", "lon", "altitude", "heading", "hor_velocity", "ver_velocity"],
         "ATTITUDE": ["roll", "pitch", "yaw"],
         "BATTERY_STATUS": ["temperature", "voltages", "current_battery", "energy_consumed"],
         "COMMAND_ACK": ["command", "result"],
@@ -24,9 +25,9 @@ def main():
         "SCALED_IMU2": ["temperature"],
         "SCALED_IMU3": ["temperature"],
         "SCALED_PRESSURE": ["temperature"],
-        "SERVO_OUTPUT_RAW": ["servo1_raw", "servo2_raw", "servo3_raw", "servo4_raw", "servo5_raw", "servo6_raw", "servo7_raw", "servo8_raw", "servo9_raw"],
+        "SERVO_OUTPUT_RAW": ["servo1_raw", "servo2_raw", "servo3_raw", "servo4_raw", "servo5_raw", "servo6_raw", "servo7_raw", "servo8_raw", "servo9_raw", "servo10_raw", "servo11_raw", "servo12_raw", "servo13_raw", "servo14_raw", "servo15_raw", "servo16_raw"],
         "STATUSTEXT": ["text"],
-        "SYS_STATUS": ["voltage", "battery", "onboard_control_sensors_present", "onboard_control_sensors_enabled", "onboard_control_sensors_health"],
+        "SYS_STATUS": ["battery_remaining", "voltage_battery", "current_battery", "onboard_control_sensors_present", "onboard_control_sensors_enabled", "onboard_control_sensors_health"],
         "VFR_HUD": ["airspeed", "climb", "alt"]
     }
     
@@ -76,6 +77,14 @@ def main():
         elif msg_type in fields_by_type:
             # Depending on message type of MAVLink message, store only relevant fields
             flight_phase_data[curr_phase][msg_type] = update_telemetry(msg, msg_type, fields_by_type)
+            
+            #add this to send data to plot juggler 
+            
+            data = flight_phase_data[curr_phase][msg_type]
+            for key, value in data.items():
+                if isinstance(value, (int, float)):
+                    send_to_plotjuggler(f"{curr_phase}_{key}", value)
+            
 
         # Print current flight phase data every 1 second
         last_print_time = output_telemetry(last_print_time, curr_phase, flight_phase_data)
