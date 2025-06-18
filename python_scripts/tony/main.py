@@ -3,6 +3,7 @@ from mavlink_connect import connect
 #from px4_mode_decode import decode_px4_mode
 #from flight_phase import det_flight_phase
 from heartbeat import process_heartbeat
+#from plotjuggler_bridge.py
 from plotjuggler_bridge import send_to_plotjuggler
 from telemetry import update_telemetry, output_telemetry
 import time
@@ -79,6 +80,7 @@ def main():
             # Depending on message type of MAVLink message, store only relevant fields
             flight_phase_data[curr_phase][msg_type] = update_telemetry(msg, msg_type, fields_by_type)
 
+            #add this to send data to plot juggler 
             data = flight_phase_data[curr_phase][msg_type]
             for key, value in data.items():
                 if isinstance(value, (int, float)):
