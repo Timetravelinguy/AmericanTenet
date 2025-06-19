@@ -1,7 +1,7 @@
-from telemetry import update_telemetry, output_telemetry
 from plotjuggler_bridge import send_to_plotjuggler
-from heartbeat import process_heartbeat
 from mavlink_connect import connect
+from heartbeat import Heartbeat
+from telemetry import Telemetry
 from pymavlink import mavutil
 import time
 
@@ -33,7 +33,7 @@ def main():
     
     # Define which message types are relevant to each flight phase
     types_by_phase = {
-        "the_connection LOG": ["BATTERY_STATUS", "GPS_RAW_INT", "ESC_STATUS", "ESC_INFO", "SYS_STATUS", "RADIO_STATUS", "VFR_HUD", "SCALED_IMU2", "SCALED_IMU3"],
+        "MASTER LOG": ["BATTERY_STATUS", "GPS_RAW_INT", "ESC_STATUS", "ESC_INFO", "SYS_STATUS", "RADIO_STATUS", "VFR_HUD", "SCALED_IMU2", "SCALED_IMU3"],
         "PREFLIGHT": ["ESC_STATUS", "HEARTBEAT", "RADIO_STATUS", "COMMAND_ACK", "SERVO_OUTPUT_RAW", "SYS_STATUS", "GPS_RAW_INT"],
         "TAKEOFF": ["ESC_INFO", "ESC_STATUS", "BATTERY_STATUS", "RAW_IMU", "SCALED_IMU2", "SCALED_IMU3", "GLOBAL_POSITION_INT"],
         "HOVERING": ["ESC_INFO", "ESC_STATUS", "SERVO_OUTPUT_RAW", "GPS_RAW_INT"],
@@ -43,14 +43,15 @@ def main():
         "POST FLIGHT": ["BATTERY_STATUS", "GPS_RAW_INT", "ESC_STATUS", "ESC_INFO", "SYS_STATUS", "RADIO_STATUS", "VFR_HUD", "SCALED_IMU2", "SCALED_IMU3", "STATUSTEXT"]
     }
     
-    # For real-time telemetry storage
-    flight_phase_data = {phase: {} for phase in types_by_phase}
+    # Initialize the Telemetry class
+    telemetry = Telemetry()
+    
+    # Initialize the Heartbeat class
+    heartbeat = Heartbeat(telemetry.master_storage)
 
     # Keep track of phases and times
     curr_phase = "PREFLIGHT"
     prev_phase = "PREFLIGHT"
-    
-    # To process 1hz for heartbeat messages
     last_heartbeat_time = 0.0
     last_print_time = 0.0
 
@@ -71,23 +72,24 @@ def main():
         if msg_type == 'HEARTBEAT':
             # Based on flight mode from HEARTBEAT message, update current and previous flight phase
             # Also return time heartbeat was processed at
-            curr_phase, prev_phase, last_heartbeat_time = process_heartbeat(msg, curr_phase, prev_phase, last_heartbeat_time)
+            curr_phase, prev_phase, last_heartbeat_time = heartbeat.process_heartbeat(msg, curr_phase, prev_phase, last_heartbeat_time)
 
         # Process all other telemetry messages
         elif msg_type in fields_by_type:
             # Depending on message type of MAVLink message, store only relevant fields
-            flight_phase_data[curr_phase][msg_type] = update_telemetry(msg, msg_type, fields_by_type)
+            telemetry.update_master_storage(msg, msg_type, fields_by_type)
             
-            #add this to send data to plot juggler 
-            
-            data = flight_phase_data[curr_phase][msg_type]
-            for key, value in data.items():
-                if isinstance(value, (int, float)):
-                    send_to_plotjuggler(f"{curr_phase}_{key}", value)
-            
+        # Dynamically filter flight_phase_data based on the current phase
+        flight_phase_data = telemetry.get_flight_phase_data(curr_phase, types_by_phase)
+        
+        # Send data to PlotJuggler
+        for msg_type, data in flight_phase_data.items():  # Iterate over filtered flight_phase_data
+            for key, value in data.items():  # Iterate over the fields in the message type
+                if isinstance(value, (int, float)):  # Check if the value is numeric
+                    send_to_plotjuggler(f"{msg_type}_{key}", value)  # Send to PlotJuggler
 
         # Print current flight phase data every 1 second
-        last_print_time = output_telemetry(last_print_time, curr_phase, flight_phase_data)
+        last_print_time = telemetry.output_phase_data(last_print_time, curr_phase, flight_phase_data)
 
         # Run this loop every 1/100th of a second
         time.sleep(0.01)

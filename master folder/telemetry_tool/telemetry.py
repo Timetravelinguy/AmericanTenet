@@ -39,9 +39,6 @@ FIELD_LABELS = {
     "timestamp": "Time"
 }
 
-'''
-
-'''
 def update_telemetry(message, type, existing_type):
     field_names = existing_type[type]
     msg_data = {}
@@ -54,7 +51,7 @@ def update_telemetry(message, type, existing_type):
             if field in ["lat", "lon"]:
                 # degE7 to °
                 value /= 1e7
-            elif field in ["altitude"]:
+            elif field in ["alt", "altitude"]:
                 # mm to m
                 value /= 1000.0
             elif field == "heading":
@@ -62,7 +59,7 @@ def update_telemetry(message, type, existing_type):
                 value *= 0.9
             elif field in ["hor_velocity", "ver_velocity", "vx", "vy", "vz"]:
                 # cm/s to m/s
-                value /= 0.01
+                value *= 0.01
             elif field == "temperature":
                 # cdegC to degC
                 value *= 0.01
@@ -86,8 +83,6 @@ def update_telemetry(message, type, existing_type):
             
             msg_data[field] = value
             
-            #msg_data[field] = getattr(message, field)
-            
     # Add timestamp to the extracted data
     current_time = datetime.now()
     msg_data["timestamp"] = current_time.strftime("%H:%M:%S")
@@ -99,7 +94,7 @@ def output_telemetry(print_time, phase, stored_data):
     if current_time - print_time >= 1:
         print_time = current_time
         print(f"\n--- {phase} ---")
-        for msg_type, data in stored_data[phase].items():
+        for msg_type, data in stored_data.items():
             print(f"{phase} | {msg_type}:")
             for key, value in data.items():
                 label = FIELD_LABELS.get(key, key)
@@ -109,4 +104,23 @@ def output_telemetry(print_time, phase, stored_data):
                     value = [round(v, 2) if isinstance(v, (int, float)) else v for v in value]
                 print(f"  {label}: {value}")
     return float(print_time)
+
+class Telemetry:
+    def __init__(self):
+        self.master_storage = {}
+        
+    def update_master_storage(self, msg, msg_type, fields_by_type):
+        self.master_storage[msg_type] = update_telemetry(msg, msg_type, fields_by_type)
+        
+    def get_flight_phase_data(self, curr_phase, types_by_phase):
+        return {
+            msg_type: self.master_storage[msg_type]
+            for msg_type in types_by_phase[curr_phase]
+            if msg_type in self.master_storage
+        }
+        
+    def output_phase_data(self, print_time, curr_phase, flight_phase_data):
+        return output_telemetry(print_time, curr_phase, flight_phase_data)
+        
+
     
