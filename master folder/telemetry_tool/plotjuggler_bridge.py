@@ -1,4 +1,12 @@
-# === plotjuggler_bridge.py ===
+## @file plotjuggler_bridge.py
+#  @brief Sends data to PlotJuggler via UDP for real-time visualization.
+#
+#  @details This script establishes a UDP connection and sends JSON-formatted
+#  telemetry data (with a timestamp) to PlotJuggler on localhost:9870.
+#
+#  @author American Tenet
+#  @date 2025-06-19
+#  @version 1.0
 import socket # For sending data over network using UDP
 import json   # For formatting data as JSON
 import time
@@ -8,7 +16,11 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 #address for PlotJuggler's UDP Server
 DESTINATION = ("127.0.0.1", 9870)
 
-# Function to send data to PlotJuggler 
+## @brief Sends a named value with timestamp to PlotJuggler.
+#  @param name The name of the variable (string).
+#  @param value The numeric value to send.
+#  @details Constructs a JSON payload with a timestamp and sends it over UDP.
+
 def send_to_plotjuggler(name, value):
     payload = {
         name: {
