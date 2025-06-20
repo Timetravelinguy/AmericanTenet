@@ -1,5 +1,6 @@
 #!/bin/bash
-
+#Run the command below to give your terminal read and write permissions so that it can run properly
+# chmod +x launch.sh
 # Open QGroundControl in current terminal
 cd ~/Downloads
 ./QGroundControl-x86_64.AppImage &
