@@ -188,38 +188,141 @@ If you're using `Windows Terminal` you can open a shell into an installed `WSL` 
 
 To open a WSL shell using a command prompt:
 
-    Open a command prompt:
-        Press the Windows Start key.
-        Type cmd and press Enter to open the prompt.
+Open a command prompt:
 
-    To start WSL and access the WSL shell, execute the command:
-
+1. Press the Windows Start key.
+2. Type cmd and press Enter to open the prompt
+3. To start WSL and access the WSL shell, execute the command:
+```
 wsl -d <distribution_name>
-
+```
 For example:
-
+```
 wsl -d Ubuntu
+```
+or
+```
+wsl -d Ubuntu-20.04
+```
 
-    wsl -d Ubuntu-20.04
-
-    If you only have one version of Ubuntu, you can just use wsl.
+>**Note**: If you only have one version of Ubuntu, you can just use wsl.
 
 Enter the following commands to first close the WSL shell, and then shut down WSL:
-
+```
 exit
 wsl -d <distribution_name> --shutdown
-
+```
 Alternatively, after entering exit you can just close the prompt.
 
-## Networking 
+### Install PX4 Toolchain 
+Next we download the PX4 source code within the WSL2 environment, and use the normal Ubuntu installer script to set up the developer environment. This will install the toolchain for Gazebo Classic simulation and Pixhawk/NuttX hardware.
+
+To install the development toolchain:
+1. Open a WSL2 Shell (if it is still open you can use the same one that was used to install WSL2).
+2. Execute the command `cd ~` to switch to the home folder of WSL for the next steps.
+> **Warning**: This is important! If you work from a location outside of the WSL file system you'll run into issues such as very slow execution and access right/permission errors.
+3. Downlaod the PX4 source code using `git` (which is already installed in WSL2)
+```shell
+git clone https://github.com/PX4/PX4-Autopilot.git --recursive
+```
+4. Run the **ubuntu.sh** installer script and acknowledge any prompts as the script progresses: 
+``` shell
+bash ./PX4-Autopilot/Tools/setup/ubuntu.sh
+```
+5. Restart the "WSL Computer" after the script completes (exit the shell, shutdown WSL, and restart WSL) 
+```shell
+exit
+wsl --shutdown
+wsl
+```
+6. Switch to the PX4 repository in the WSL home folder: 
+``` 
+cd ~/PX4-Autopilot 
+```
+7. Build the PX4 Repository in the WSL home folder:
+```
+make px4_sitl
+```
+for more build options see [here](https://docs.px4.io/main/en/dev_setup/building_px4.html). 
+
+## Visual Studio Integration
+VS Code running on Windows is well integrated with WSL. <br> 
+To set up the integration:
+1. Download and install VIsual Studio Code on windows. 
+
+2. Open VS Code. 
+
+3. Install the extension called Remote- WSL
+4. Open a WSL Shell
+5. In the WSL Shell, switch to the PX4 Folder: 
+```
+cd ~/PX4-Autopilot
+```
+6. In the WSL Shell, start VS Code:
+```
+code .
+```
+This will open the IDE fully integrated with the WSL shell. <br>
+Make sure you always open the PX4 repository in the remote WSL mode. <br>
+
+7. Next time you want to develop WSL2 you can very easily open it again in Remote WSL mode by selection **Open Recent**. This will start WSL for you. 
+<p align="center">
+    <img src="https://docs.px4.io/main/assets/vscode_wsl.DUUO0DI2.png"/>
+</p>
+
+> **Note**: however that the IP address of the WSL virtual machine will have changed, so you won't be able to monitor simulation from QGC for Windows (you can still monitor using QGC for Linux)
+
+### QGroundControl in WSL
+The easiest way to set up and use QGroundControl is to donwload the Lnux version into WSL. <br>
+
+You can do this from within the WSL shell. 
+1. Right click [here](https://d176tv9ibo4jno.cloudfront.net/builds/master/QGroundControl-x86_64.AppImage) and copy the link to the download. 
+
+2. Open a WSL shell and enter the following commands to download the appimage and make it executable (replace the AppImage URL where indicated):
+``` shell
+cd ~
+wget <the_copied_AppImage_URL>
+chmod +x QgroundControl.AppImage
+```
+3. Run QGroundControl 
+```shell
+./QGroundControl.AppImage
+```
+QGroundControl will launch and automatically connect to a running simulation and allow you to monitor and control your vehicle(s).
+
+You will not be able to use it to install PX4 firmware because WSL does not allow access to serial devices.
+
+## QGroundControl on Windows
+Install [QGroundControl on Windows](https://d176tv9ibo4jno.cloudfront.net/latest/QGroundControl-installer.exe) if you want to be able to update hardware with firmware created within PX4. 
+
+These steps descibe how you can connect to the simulation running in the WSL: 
+1. Open a WSL Shell
+
+2. Check the IP adress of the WSL virtual machine by running the command `ip addr | grep eth0` : 
+```shell
+ip addr | grep eth0
+
+6: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    inet 172.18.46.131/20 brd 172.18.47.255 scope global eth0
+```
+copy the first part of the `eth0` interface `inet` address to the clipboard In this case: `172.18.46.131` 
+
+3. In QGC go to Q > Application settings > Comms Links
+
+4. Add a UDP Link called "WSL" to port 18570 lof the IP address copied above
+5. Save it and connect to it. 
+>**Note**: You will have to uodate the WSL comm link in QGC every time WSL restarts (because it gets a dynamic IP address).
+
+
+# Networking 
 - how it works 
-## MAVLink Router Installation
+# MAVLink Router Installation
 QGC and scripts at the same time wow
 - modify qgc
 - main.conf
 - px shell
 
-## Plot Juggler 
+# Plot Juggler 
 How to install plotjuggler 
 - ros2 
 - mavlink router
