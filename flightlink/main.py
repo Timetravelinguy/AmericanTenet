@@ -127,4 +127,3 @@ if __name__ == "__main__":
         print(f"\nMAVLink error: {e}")
     except Exception as e:
         print(f"\nUnexpected error: {e}")
-
