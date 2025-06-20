@@ -1,6 +1,15 @@
+## @file telemetry.py
+#  @brief Handles extraction, formatting, and display of MAVLink telemetry data.
+#
+#  @details Provides utility functions to parse fields from MAVLink messages, convert units to SI,
+#  and print formatted telemetry by flight phase. Also includes timestamping for better log clarity.
+#
+#  @author American Tenet
+#  @date 2025-06-19
+#  @version 1.0
 from datetime import datetime
 import time
-
+## @brief Dictionary for human-readable telemetry field labels.
 # For telemetry output formatting purposes
 FIELD_LABELS = {
     "roll": "Roll (rad)",
@@ -38,7 +47,11 @@ FIELD_LABELS = {
     "text": "Status Message",
     "timestamp": "Time"
 }
-
+## @brief Extracts and converts telemetry fields from a MAVLink message.
+#  @param message The MAVLink message to process.
+#  @param type The message type string (e.g., "ATTITUDE", "BATTERY_STATUS").
+#  @param existing_type Dictionary mapping types to desired field names.
+#  @return A dictionary of extracted and converted telemetry fields with a timestamp.
 def update_telemetry(message, type, existing_type):
     field_names = existing_type[type]
     msg_data = {}
@@ -88,6 +101,11 @@ def update_telemetry(message, type, existing_type):
     msg_data["timestamp"] = current_time.strftime("%H:%M:%S")
         
     return msg_data
+## @brief Prints flight phase telemetry to the terminal every second.
+#  @param print_time Last time telemetry was printed (epoch time).
+#  @param phase The current flight phase (string).
+#  @param stored_data Dictionary containing telemetry data organized by phase and message type.
+#  @return Updated time of last print as a float.
 
 def output_telemetry(print_time, phase, stored_data):
     current_time = time.time()
