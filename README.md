@@ -1,14 +1,6 @@
-<h1 align="center">
-    <a href="https://amplication.com/#gh-light-mode-only">
-    <img src="./.github/assets/amplication-logo-light-mode.svg">
-    </a>
-    <a href="https://amplication.com/#gh-dark-mode-only">
-    <img src="./.github/assets/amplication-logo-dark-mode.svg">
-    </a>
-</h1>
-
 <p align="center">
-  <i align="center">American Tenet  </i>
+  <strong><font size="6">FlightLink</font></strong><br>
+  <font size="4">American Tenet</font>
 </p>
 
 <h4 align="center">
@@ -30,7 +22,8 @@
 
 This repository serves as a hub for everything we've built so far — from simulation setups to companion tools and scripts that enhance the PX4 development pipeline.
 
-
+FlightLink is a real time telemetry monotoring and data visualization tool deisgned for PX4 based drones. 
+We use this tool to decode and sort **Mavlink** messages into different flight phase data. The data is then displayed in real time on a graph using **plotjuggler** showing relevant flight phase data during the mission. 
 ## Usage 
 
 To get started with setting up your virtual environment, first you need to decide wether you are going to use [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) or a computer running [Ubuntu Linux](https://ubuntu.com/).
