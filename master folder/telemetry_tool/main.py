@@ -1,3 +1,33 @@
+## @mainpage Telemetry Tool
+#  @brief Live PX4 MAVLink telemetry monitor and PlotJuggler bridge.
+#
+#  This tool connects to a MAVLink stream (typically via QGroundControl), receives telemetry messages,
+#  processes them by flight phase, and visualizes the data using PlotJuggler.
+#
+#  ### Key Features
+#  - Detects flight phases like PREFLIGHT, TAKEOFF, CRUISING, and LANDING
+#  - Extracts relevant telemetry fields (battery, GPS, attitude, ESC, etc.)
+#  - Converts raw MAVLink units to SI units
+#  - Sends real-time data to PlotJuggler over UDP
+#  - Prints telemetry snapshots every second
+#
+#  ### Project Modules
+#  - `main.py` – Main telemetry loop and routing
+#  - `telemetry.py` – Field extraction and unit conversion
+#  - `heartbeat.py` – Flight mode decoding and phase detection
+#  - `plotjuggler_bridge.py` – UDP interface to PlotJuggler
+#  - `mavlink_connect.py` – MAVLink connection utility
+#
+#  @author American Tenet
+#  @version 1.0
+#  @date 2025-06-19
+
+## @file main.py
+#  @brief Main control loop for MAVLink message handling and telemetry routing.
+#
+#  @details Connects to QGroundControl via UDP, tracks drone flight phases, extracts telemetry fields,
+#  and sends relevant data to PlotJuggler for live visualization.
+
 from plotjuggler_bridge import send_to_plotjuggler
 from mavlink_connect import connect
 from heartbeat import Heartbeat
