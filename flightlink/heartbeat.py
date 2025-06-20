@@ -128,8 +128,7 @@ class Heartbeat:
                 return "HOVERING"
 
         # LANDING
-        # If sub_mode_str indicates LAND or descending near the ground.
-        elif sub_mode_str == "LAND" or (altitude and altitude <= 0.5 and vz and vz > 0):
+        elif sub_mode_str == "LAND":
             return "LANDING"
 
         # POST FLIGHT
