@@ -35,6 +35,8 @@ from telemetry import Telemetry
 from pymavlink import mavutil
 import time
 
+## @brief Main function to run the MAVLink telemetry loop.
+#  @details Connects to QGroundControl, tracks flight phases, and publishes telemetry to PlotJuggler.
 def main():
     # Connect to MAVLink stream (forwarded by QGroundControl)
     the_connection = connect('udpin', '14551')
