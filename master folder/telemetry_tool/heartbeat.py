@@ -1,6 +1,18 @@
+## @file heartbeat.py
+#  @brief Decodes PX4 heartbeat messages and determines drone flight phases.
+#
+#  @details This script provides functions to decode PX4-specific custom_mode values from MAVLink
+#  HEARTBEAT messages and determines the current flight phase based on the sub-mode. It is designed
+#  to support real-time drone monitoring and telemetry visualization.
+#
+#  @author American Tenet
+#  @date 2025-06-19
+#  @version 1.0
 from pymavlink import mavutil
 import time
-
+## @brief Decode PX4 custom_mode from a MAVLink HEARTBEAT.
+#  @param custom_mode The 32-bit custom_mode value from the HEARTBEAT message.
+#  @return tuple (main_mode_str, sub_mode_str) representing decoded PX4 modes.
 class Heartbeat:
     def __init__(self, master_storage):
         # Initialize the Heartbeat w/ a reference to master_storage.
@@ -86,7 +98,10 @@ class Heartbeat:
         return main_mode_str, sub_mode_str
 
     '''
-    @brief Determine flight phase from current flight mode, previous flight data, and current flight data
+    ## @brief Determine the drone's flight phase from mode transitions.
+#  @param sub_mode_str The current PX4 sub-mode string.
+#  @param prev_phase The previously recorded flight phase.
+#  @return The current flight phase as a string.
     '''
     def det_flight_phase(self, sub_mode_str, prev_phase):
         """
@@ -142,6 +157,13 @@ class Heartbeat:
         return prev_phase
 
     def process_heartbeat(self, message, current_phase, previous_phase, heartbeat_time):
+
+## @brief Process a MAVLink HEARTBEAT message and update flight phase.
+#  @param message The received HEARTBEAT MAVLink message.
+#  @param current_phase The current phase of the flight.
+#  @param previous_phase The last known phase of the flight.
+#  @param heartbeat_time Timestamp of the last processed heartbeat.
+#  @return tuple of updated (current_phase, previous_phase, heartbeat_time).
         """
         Process a heartbeat message and update the current and previous flight phases.
 
