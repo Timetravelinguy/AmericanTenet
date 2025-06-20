@@ -6,7 +6,7 @@
 #  heartbeat to ensure proper communication is established before returning the connection.
 #
 #  @author American Tenet
-#  @date 2025-06-19
+#  @date 2025-06-20
 #  @version 1.0
 from pymavlink import mavutil
 
@@ -14,7 +14,6 @@ from pymavlink import mavutil
 #  @param protocol The communication protocol to use (e.g., "udpin", "tcp", "com").
 #  @param port_number The port number (e.g., 14540, 14551) to connect to.
 #  @return The MAVLink connection object after receiving the first heartbeat.
-
 def connect(protocol, port_number):
     
     # Connect to MAVLink stream (forwarded by QGC)

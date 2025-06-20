@@ -5,7 +5,7 @@
 #  telemetry data (with a timestamp) to PlotJuggler on localhost:9870.
 #
 #  @author American Tenet
-#  @date 2025-06-19
+#  @date 2025-06-20
 #  @version 1.0
 import socket # For sending data over network using UDP
 import json   # For formatting data as JSON
@@ -20,7 +20,6 @@ DESTINATION = ("127.0.0.1", 9870)
 #  @param name The name of the variable (string).
 #  @param value The numeric value to send.
 #  @details Constructs a JSON payload with a timestamp and sends it over UDP.
-
 def send_to_plotjuggler(name, value):
     payload = {
         name: {

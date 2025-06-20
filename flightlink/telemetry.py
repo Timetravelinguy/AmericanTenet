@@ -5,10 +5,11 @@
 #  and print formatted telemetry by flight phase. Also includes timestamping for better log clarity.
 #
 #  @author American Tenet
-#  @date 2025-06-19
+#  @date 2025-06-20
 #  @version 1.0
 from datetime import datetime
 import time
+
 ## @brief Dictionary for human-readable telemetry field labels.
 # For telemetry output formatting purposes
 FIELD_LABELS = {
@@ -47,6 +48,7 @@ FIELD_LABELS = {
     "text": "Status Message",
     "timestamp": "Time"
 }
+
 ## @brief Extracts and converts telemetry fields from a MAVLink message.
 #  @param message The MAVLink message to process.
 #  @param type The message type string (e.g., "ATTITUDE", "BATTERY_STATUS").
@@ -101,12 +103,12 @@ def update_telemetry(message, type, existing_type):
     msg_data["timestamp"] = current_time.strftime("%H:%M:%S")
         
     return msg_data
+
 ## @brief Prints flight phase telemetry to the terminal every second.
 #  @param print_time Last time telemetry was printed (epoch time).
 #  @param phase The current flight phase (string).
 #  @param stored_data Dictionary containing telemetry data organized by phase and message type.
 #  @return Updated time of last print as a float.
-
 def output_telemetry(print_time, phase, stored_data):
     current_time = time.time()
     if current_time - print_time >= 1:
@@ -123,22 +125,42 @@ def output_telemetry(print_time, phase, stored_data):
                 print(f"  {label}: {value}")
     return float(print_time)
 
+
+## @brief Manages MAVLink telemetry data.
+#  @details Stores, filters, and outputs telemetry data by flight phase.
+
 class Telemetry:
+    
+    ## @brief Initializes the telemetry storage.
     def __init__(self):
+        ## @brief Stores all telemetry data by message type.
         self.master_storage = {}
-        
+
+    ## @brief Updates telemetry storage with new data.
+    #  @param msg MAVLink message with telemetry data.
+    #  @param msg_type Message type (e.g., "ATTITUDE").
+    #  @param fields_by_type Maps message types to field names.
     def update_master_storage(self, msg, msg_type, fields_by_type):
         self.master_storage[msg_type] = update_telemetry(msg, msg_type, fields_by_type)
-        
+
+    ## @brief Gets telemetry data for the current flight phase.
+    #  @param curr_phase Current flight phase (e.g., "CRUISE").
+    #  @param types_by_phase Maps phases to relevant message types.
+    #  @return Telemetry data for the current phase.
     def get_flight_phase_data(self, curr_phase, types_by_phase):
         return {
             msg_type: self.master_storage[msg_type]
             for msg_type in types_by_phase[curr_phase]
             if msg_type in self.master_storage
         }
-        
+
+    ## @brief Outputs telemetry data for the current phase.
+    #  @param print_time Last output timestamp.
+    #  @param curr_phase Current flight phase.
+    #  @param flight_phase_data Telemetry data for the current phase.
+    #  @return Updated timestamp of the last output.
     def output_phase_data(self, print_time, curr_phase, flight_phase_data):
         return output_telemetry(print_time, curr_phase, flight_phase_data)
-        
 
-    
+
+

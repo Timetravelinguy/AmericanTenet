@@ -1,34 +1,28 @@
 ## @file heartbeat.py
-#  @brief Decodes PX4 heartbeat messages and determines drone flight phases.
+#  @brief Decodes PX4 heartbeat messages and determines flight phases.
 #
 #  @details This script provides functions to decode PX4-specific custom_mode values from MAVLink
 #  HEARTBEAT messages and determines the current flight phase based on the sub-mode. It is designed
 #  to support real-time drone monitoring and telemetry visualization.
 #
 #  @author American Tenet
-#  @date 2025-06-19
+#  @date 2025-06-20
 #  @version 1.0
 from pymavlink import mavutil
 import time
-## @brief Decode PX4 custom_mode from a MAVLink HEARTBEAT.
-#  @param custom_mode The 32-bit custom_mode value from the HEARTBEAT message.
-#  @return tuple (main_mode_str, sub_mode_str) representing decoded PX4 modes.
+
+## @brief Decodes PX4 heartbeat messages and determines flight phases.
 class Heartbeat:
+    ## @brief Initializes the Heartbeat class.
+    #  @param master_storage Reference to telemetry storage.
     def __init__(self, master_storage):
         # Initialize the Heartbeat w/ a reference to master_storage.
         self.master_storage = master_storage
-        
+
+    ## @brief Decodes PX4 flight modes from custom_mode.
+    #  @param custom_mode 32-bit custom_mode value.
+    #  @return Tuple of main and sub-mode strings.
     def decode_px4_mode(self, custom_mode):
-        """
-        Decode the custom_mode value from a PX4 HEARTBEAT message.
-        Extracts the main and sub flight modes based on PX4 custom_mode bit layout.
-
-        Parameters:
-            custom_mode (int): The 32-bit custom_mode value from the HEARTBEAT message.
-
-        Returns:
-            tuple: (main_mode_str, sub_mode_str) representing decoded mode names.
-        """
 
         # Extract main mode (3rd byte) and sub mode (4th byte)
         main_mode = (custom_mode >> 16) & 0xFF
@@ -97,37 +91,26 @@ class Heartbeat:
 
         return main_mode_str, sub_mode_str
 
-    '''
+
     ## @brief Determine the drone's flight phase from mode transitions.
-#  @param sub_mode_str The current PX4 sub-mode string.
-#  @param prev_phase The previously recorded flight phase.
-#  @return The current flight phase as a string.
-    '''
+    #  @param sub_mode_str The current PX4 sub-mode string.
+    #  @param prev_phase The previously recorded flight phase.
+    #  @return The current flight phase as a string.
     def det_flight_phase(self, sub_mode_str, prev_phase):
-        """
-        Determine flight phase from current flight mode, previous flight data, and telemetry data.
-
-        Parameters:
-            sub_mode_str (str): The sub-mode string from the heartbeat message.
-            prev_phase (str): The previous flight phase.
-
-        Returns:
-            str: The current flight phase.
-        """
         
-        # Access altitude from GPS_RAW_INT in master_storage
+        # Access altitude from GPS_RAW_INT in master_storage.
         altitude = self.master_storage.get("GPS_RAW_INT", {}).get("alt", None)
         
-        # Access vertical velocity from GLOBAL_POSITION_INT in master_storage
+        # Access vertical velocity from GLOBAL_POSITION_INT in master_storage.
         vz = self.master_storage.get("GLOBAL_POSITION_INT", {}).get("vz", None)
         
-        # Access horizontal velocity from GLOBAL_POSITION_INT in master_storage
+        # Access horizontal velocity from GLOBAL_POSITION_INT in master_storage.
         # horizontal x velocity
         vx = self.master_storage.get("GLOBAL_POSITION_INT", {}).get("vx", None)
         # horizontal y velocity
         vy = self.master_storage.get("GLOBAL_POSITION_INT", {}).get("vy", None)
         
-        # Access rpm from ESC_STATUS in master_storage
+        # Access rpm from ESC_STATUS in master_storage.
         rpm = self.master_storage.get("ESC_STATUS", {}).get("rpm", None)
         
         # TAKEOFF
@@ -140,12 +123,12 @@ class Heartbeat:
 
         # HOVERING
         elif sub_mode_str == "LOITER" and prev_phase in ["TAKEOFF", "CRUISING"]:
-            # Ensure not descending (vz > 0 indicates descending in MAVLink)
+            # Ensure not descending (vz > 0 indicates descending in MAVLink).
             if not (vz and vz > 0):
                 return "HOVERING"
 
         # LANDING
-        # If sub_mode_str indicates LAND or descending near the ground
+        # If sub_mode_str indicates LAND or descending near the ground.
         elif sub_mode_str == "LAND" or (altitude and altitude <= 0.5 and vz and vz > 0):
             return "LANDING"
 
@@ -156,26 +139,14 @@ class Heartbeat:
         # Fallback
         return prev_phase
 
+    ## @brief Processes a MAVLink HEARTBEAT message.
+    #  @param message MAVLink HEARTBEAT message.
+    #  @param current_phase Current flight phase.
+    #  @param previous_phase Last known flight phase.
+    #  @param heartbeat_time Timestamp of last heartbeat.
+    #  @return Updated (current_phase, previous_phase, heartbeat_time).
     def process_heartbeat(self, message, current_phase, previous_phase, heartbeat_time):
 
-## @brief Process a MAVLink HEARTBEAT message and update flight phase.
-#  @param message The received HEARTBEAT MAVLink message.
-#  @param current_phase The current phase of the flight.
-#  @param previous_phase The last known phase of the flight.
-#  @param heartbeat_time Timestamp of the last processed heartbeat.
-#  @return tuple of updated (current_phase, previous_phase, heartbeat_time).
-        """
-        Process a heartbeat message and update the current and previous flight phases.
-
-        Parameters:
-            message: The MAVLink heartbeat message.
-            current_phase (str): The current flight phase.
-            previous_phase (str): The previous flight phase.
-            heartbeat_time (float): The last time a heartbeat was processed.
-
-        Returns:
-            tuple: (current_phase, previous_phase, heartbeat_time)
-        """
         # Uncomment for debugging
         #print(f"[DEBUG] HEARTBEAT received: {msg}")
 
