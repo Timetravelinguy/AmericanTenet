@@ -99,7 +99,7 @@ class Heartbeat:
     def det_flight_phase(self, sub_mode_str, prev_phase):
         
         # Access altitude from GPS_RAW_INT in master_storage.
-        altitude = self.master_storage.get("GPS_RAW_INT", {}).get("alt", None)
+        altitude = self.master_storage.get("ADSB_VEHICLE", {}).get("altitude", None)
         
         # Access vertical velocity from GLOBAL_POSITION_INT in master_storage.
         vz = self.master_storage.get("GLOBAL_POSITION_INT", {}).get("vz", None)
@@ -121,12 +121,6 @@ class Heartbeat:
         elif prev_phase == "PREFLIGHT" or prev_phase is None:
             return "PREFLIGHT"
 
-        # HOVERING
-        elif sub_mode_str == "LOITER" and prev_phase in ["TAKEOFF", "CRUISING"]:
-            # Ensure not descending (vz > 0 indicates descending in MAVLink).
-            if not (vz and vz > 0):
-                return "HOVERING"
-
         # LANDING
         elif sub_mode_str == "LAND":
             return "LANDING"
@@ -134,6 +128,24 @@ class Heartbeat:
         # POST FLIGHT
         elif sub_mode_str == "LOITER" and prev_phase == "LANDING":
             return "POST FLIGHT"
+
+        # HOVERING
+        elif sub_mode_str == "LOITER" and prev_phase in ["TAKEOFF", "CRUISING", "SOARING IN THERMAL"]:
+            # Ensure not descending (vz > 0 indicates descending in MAVLink).
+            if not (altitude and altitude > 0.05):
+                return "HOVERING"
+            
+        # CRUISING
+        elif prev_phase in ["HOVERING", "TAKEOFF", "SOARING IN THERMAL"]:
+            # If the drone is moving in a horizontal direction greater than 0.1 m/s
+            if (vx > 0.05 or vy > 0.05) and (vz is None or vz <= 0.05):
+                return "CRUISING" 
+        
+        # SOARING IN THERMAL
+        elif sub_mode_str in ["HOVERING", "TAKEOFF", "CRUISING"]:
+            # If the drone's rpm is low and vertical speed ascending
+            if rpm < 1000 and vz > 0.05:
+                return "SOARING IN THERMAL"
 
         # Fallback
         return prev_phase
